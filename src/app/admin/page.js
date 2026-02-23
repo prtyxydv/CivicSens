@@ -94,7 +94,7 @@ export default function AdminDashboard() {
           <h2 className="text-5xl font-black tracking-tighter leading-none mb-3">Dashboard <span className="text-blue-500">Overview</span></h2>
           <p className="text-slate-400 font-medium tracking-tight flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-emerald-500" />
-            System uptime 99.9% • Real-time AI classification active
+            System Up • Real-time classification active
           </p>
         </div>
         <div className="flex gap-4">
