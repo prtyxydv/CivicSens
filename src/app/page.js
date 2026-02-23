@@ -114,9 +114,11 @@ const copyToClipboard = (text) => {
   const handleLogin = (e) => {
     e.preventDefault();
     if (adminUser === "ADMIN123" && adminPass === "admin@1234") {
+      localStorage.setItem('civicsens_admin_auth', 'true');
       setIsLoggedIn(true);
       setShowAdminModal(false);
-      fetchAdminReports();
+      // Redirect to the new admin dashboard
+      window.location.href = '/admin';
     } else { 
       alert("System Alert: Invalid Access Credentials"); 
     }
