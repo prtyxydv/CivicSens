@@ -157,10 +157,12 @@ const copyToClipboard = (text) => {
         longitude: coords.lng
       }]);
 
-      if (error) throw error;
-      
       // Success State Update
-      setGeneratedTicket(ticketID);
+      setGeneratedTicket({
+        id: ticketID,
+        category: ai.cat,
+        priority: ai.prio
+      });
       setComplaint('');
       if (fileInput) fileInput.value = '';
       
@@ -546,7 +548,19 @@ const copyToClipboard = (text) => {
             
             <div className="bg-slate-950 py-8 rounded-[2.5rem] border border-slate-800 mb-6">
               <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Official Ticket ID</p>
-              <span className="text-4xl font-mono font-black text-blue-500 tracking-widest">{generatedTicket}</span>
+              <span className="text-4xl font-mono font-black text-blue-500 tracking-widest">{generatedTicket.id}</span>
+            </div>
+
+            {/* AI Insights: Category & Priority */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1">Category</p>
+                <p className="text-xs font-bold">{generatedTicket.category}</p>
+              </div>
+              <div className={`p-4 rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1">Priority Level</p>
+                <p className="text-xs font-bold">Level {generatedTicket.priority}</p>
+              </div>
             </div>
 
             {/* Urgency Timer Restoration */}
