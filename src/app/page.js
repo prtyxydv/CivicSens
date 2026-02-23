@@ -9,6 +9,13 @@ import {
 
 export default function CivicSens() {
   // --- 1. CORE SYSTEM STATES ---
+  const [copied, setCopied] = useState(false);
+
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text);
+  setCopied(true);
+  setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+};
   const [complaint, setComplaint] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedTicket, setGeneratedTicket] = useState(null);
