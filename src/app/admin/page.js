@@ -27,6 +27,7 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
   // --- 1. DATA FETCHING ---
   const fetchDashboardData = async () => {
@@ -70,9 +71,9 @@ export default function AdminDashboard() {
   }, []);
 
   // --- 2. ACTIONS ---
-  const handleStatusChange = async (id, currentStatus) => {
-    const nextStatus = currentStatus === 'Verified' ? 'Dispatched' : currentStatus === 'Dispatched' ? 'Resolved' : 'Verified';
-    const { error } = await supabase.from('reports').update({ status: nextStatus }).eq('id', id);
+  const handleStatusChange = async (id, newStatus) => {
+    if (!newStatus) return;
+    const { error } = await supabase.from('reports').update({ status: newStatus }).eq('id', id);
     if (!error) fetchDashboardData();
   };
 
@@ -148,14 +149,14 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-hidden px-2">
+              <table className="w-full text-left border-collapse table-fixed">
                 <thead>
                   <tr className={isDark ? 'bg-slate-950/50' : 'bg-slate-50/50'}>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Incident</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">Priority</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
-                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right">Actions</th>
+                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 w-[40%]">Incident</th>
+                    <th className="px-2 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-center w-[15%]">Priority</th>
+                    <th className="px-2 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 w-[15%]">Status</th>
+                    <th className="px-6 py-5 text-[10px] font-black uppercase tracking-widest text-slate-500 text-right w-[30%]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-200'}`}>
@@ -176,16 +177,16 @@ export default function AdminDashboard() {
                     </tr>
                   ) : filteredReports.map((report) => (
                     <tr key={report.id} className={`group transition-colors ${isDark ? 'hover:bg-slate-800/20' : 'hover:bg-slate-50/50'} ${report.priority_level === 3 && (isDark ? 'bg-red-500/5' : 'bg-red-50/30')}`}>
-                      <td className="px-8 py-6">
-                        <div className="flex flex-col">
-                          <span className="font-mono text-xs text-blue-500 font-bold mb-1">#{report.ticket_id}</span>
-                          <span className={`font-black ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{report.category}</span>
-                          <span className={`text-[10px] font-medium max-w-[200px] truncate ${textSecondary}`}>{report.description}</span>
+                      <td className="px-6 py-6">
+                        <div className="flex flex-col overflow-hidden">
+                          <span className="font-mono text-[9px] text-blue-500 font-black mb-1 truncate">#{report.ticket_id}</span>
+                          <span className={`font-black text-sm ${isDark ? 'text-slate-100' : 'text-slate-800'} truncate`}>{report.category}</span>
+                          <span className={`text-[10px] font-medium truncate ${textSecondary}`}>{report.description}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-6 text-center">
+                      <td className="px-2 py-6 text-center">
                         <div className="flex justify-center">
-                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest border ${
+                          <span className={`px-2 py-1 rounded-full text-[9px] font-black tracking-widest border shrink-0 ${
                             report.priority_level === 3 
                               ? 'bg-red-500/20 text-red-500 border-red-500/30' 
                               : report.priority_level === 2 
@@ -196,26 +197,62 @@ export default function AdminDashboard() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${
+                      <td className="px-2 py-6">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                             report.status === 'Resolved' ? 'bg-emerald-500' : 
                             report.status === 'Dispatched' ? 'bg-blue-500' : 'bg-slate-400 animate-pulse'
                           }`} />
-                          <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{report.status}</span>
+                          <span className={`text-[10px] font-bold truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{report.status}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-6 py-6 text-right relative">
                         <div className="flex justify-end gap-2 items-center">
-                          <button 
-                            onClick={() => handleStatusChange(report.id, report.status)}
-                            className={`p-2.5 rounded-xl border transition-all hover:scale-105 active:scale-95 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-blue-600 hover:text-white' : 'bg-white border-slate-200 hover:bg-blue-50 text-blue-600 shadow-sm'}`}
-                            title="Change Status"
-                          >
-                            <ExternalLink size={16} />
-                          </button>
-                          <button className={`p-2.5 rounded-xl border transition-all hover:scale-105 active:scale-95 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm'}`} title="Assign Officer">
-                            <UserPlus size={16} />
+                          {/* Functional Custom Dropdown */}
+                          <div className="relative">
+                            <button 
+                              onClick={() => setOpenDropdownId(openDropdownId === report.id ? null : report.id)}
+                              className={`
+                                flex items-center gap-2 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest 
+                                border transition-all hover:scale-105 active:scale-95 shrink-0
+                                ${report.status === 'Resolved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                                  report.status === 'Dispatched' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 
+                                  report.status === 'Verified' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 
+                                  isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-100 text-slate-500 border-slate-200'}
+                              `}
+                            >
+                              <span className="truncate">{report.status}</span>
+                              <MoreVertical size={10} className={`transition-transform duration-300 shrink-0 ${openDropdownId === report.id ? 'rotate-90 text-white' : 'opacity-40'}`} />
+                            </button>
+
+                            {openDropdownId === report.id && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setOpenDropdownId(null)} />
+                                <div className={`absolute right-0 mt-2 w-36 border rounded-xl shadow-2xl z-50 p-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                                  {['Submitted', 'Verified', 'Dispatched', 'Resolved'].map((st) => (
+                                    <button
+                                      key={st}
+                                      onClick={() => {
+                                        handleStatusChange(report.id, st);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      className={`
+                                        w-full text-left px-3 py-2 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all mb-0.5
+                                        ${report.status === st 
+                                          ? 'bg-blue-600 text-white shadow-lg' 
+                                          : isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-50 hover:bg-slate-100 hover:text-blue-600'}
+                                      `}
+                                    >
+                                      {st}
+                                    </button>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                          
+                          <button className={`p-2 rounded-lg border transition-all hover:scale-105 active:scale-95 shrink-0 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-500 shadow-sm'}`} title="Assign Officer">
+                            <UserPlus size={14} />
                           </button>
                         </div>
                       </td>
