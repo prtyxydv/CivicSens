@@ -128,7 +128,7 @@ const copyToClipboard = (text) => {
   // --- 6. EVENT HANDLERS ---
   const handleLogin = (e) => {
     e.preventDefault();
-    if (adminUser === "ADMIN123" && adminPass === "admin@1234") {
+    if (adminUser === "admin" && adminPass === "admin") {
       localStorage.setItem('civicsens_admin_auth', 'true');
       setIsLoggedIn(true);
       setShowAdminModal(false);
@@ -567,8 +567,8 @@ const copyToClipboard = (text) => {
               <h3 className="text-2xl font-black uppercase tracking-tighter">System Access</h3>
             </div>
             <form onSubmit={handleLogin} className="space-y-4">
-              <input type="text" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} className={`w-full border rounded-2xl px-6 py-5 outline-none font-mono text-sm ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Badge ID (ADMIN123)" />
-              <input type="password" value={adminPass} onChange={(e) => setAdminPass(e.target.value)} className={`w-full border rounded-2xl px-6 py-5 outline-none font-mono text-sm ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Passkey" />
+              <input type="text" value={adminUser} onChange={(e) => setAdminUser(e.target.value)} className={`w-full border rounded-2xl px-6 py-5 outline-none font-mono text-sm ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Badge ID (admin)" />
+              <input type="password" value={adminPass} onChange={(e) => setAdminPass(e.target.value)} className={`w-full border rounded-2xl px-6 py-5 outline-none font-mono text-sm ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'}`} placeholder="Passkey (admin)" />
               <button className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl uppercase tracking-widest text-xs shadow-lg hover:bg-blue-500 transition-colors mt-4">Authenticate</button>
               <button type="button" onClick={() => setShowAdminModal(false)} className="w-full text-center text-[10px] font-black opacity-40 uppercase tracking-widest mt-4 hover:opacity-100 transition-opacity">Cancel Protocol</button>
             </form>
