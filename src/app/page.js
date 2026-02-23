@@ -25,7 +25,8 @@ const copyToClipboard = (text) => {
   const [aiAnalysisResult, setAiAnalysisResult] = useState(null); // To show Urgency Timer
   const [isHudExpanded, setIsHudExpanded] = useState(false);
   const [dashData, setDashData] = useState({ categories: {}, unresolved: 0, oldestHours: 0 });
-  
+  const [previewUrl, setPreviewUrl] = useState(null);
+
   // --- 2. AUTH & ADMIN STATES ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -65,6 +66,20 @@ const copyToClipboard = (text) => {
     }
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setPreviewUrl(null);
+    const fileInput = document.getElementById('fileIn');
+    if (fileInput) fileInput.value = '';
+  };
+
   const fetchDashboardData = async () => {
     const { data } = await supabase.from('reports').select('*');
     if (data) {
@@ -166,6 +181,7 @@ const copyToClipboard = (text) => {
         priority: ai.prio
       });
       setComplaint('');
+      setPreviewUrl(null);
       if (fileInput) fileInput.value = '';
       
       // Refresh local network stats
@@ -435,12 +451,34 @@ const copyToClipboard = (text) => {
                   {/* Image Upload */}
                   <div>
                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 block">Visual Evidence</label>
-                    <div className={`relative h-40 rounded-[2rem] border-2 border-dashed flex items-center justify-center group transition-colors ${isDark ? 'border-slate-800 hover:border-blue-500 bg-slate-950/50' : 'border-slate-200 hover:border-blue-400 bg-slate-50'}`}>
-                      <input type="file" id="fileIn" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                      <div className="text-center">
-                        <Camera className="w-10 h-10 opacity-30 group-hover:opacity-100 group-hover:scale-110 transition-all text-blue-500 mx-auto mb-2" />
-                        <span className="text-xs font-bold text-slate-400 group-hover:text-blue-500">Tap to upload photo</span>
-                      </div>
+                    <div className={`relative h-48 rounded-[2rem] border-2 border-dashed flex items-center justify-center group transition-all overflow-hidden ${isDark ? 'border-slate-800 hover:border-blue-500 bg-slate-950/50' : 'border-slate-200 hover:border-blue-400 bg-slate-50'}`}>
+                      {previewUrl ? (
+                        <div className="relative w-full h-full group">
+                          <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                          <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                            <button 
+                              onClick={removeImage}
+                              className="bg-red-500 text-white px-6 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-colors shadow-xl"
+                            >
+                              Remove Image
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <input 
+                            type="file" 
+                            id="fileIn" 
+                            onChange={handleImageChange}
+                            accept="image/*"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                          />
+                          <div className="text-center">
+                            <Camera className="w-10 h-10 opacity-30 group-hover:opacity-100 group-hover:scale-110 transition-all text-blue-500 mx-auto mb-2" />
+                            <span className="text-xs font-bold text-slate-400 group-hover:text-blue-500">Tap to upload photo</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
