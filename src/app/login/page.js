@@ -1,9 +1,14 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Cpu, Lock, Mail, Moon, ShieldCheck, Sun } from "lucide-react";
+import { Lock, Mail, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { GlowBorder } from "@/components/ui/GlowBorder";
+import { SectionWrapper } from "@/components/ui/SectionWrapper";
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -18,27 +23,8 @@ function LoginClient() {
   const [role, setRole] = useState(initialRole);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isDark, setIsDark] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const saved = localStorage.getItem("civicsens_theme");
-    if (saved) setIsDark(saved === "dark");
-  }, []);
-
-  useEffect(() => {
-    const onMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    localStorage.setItem("civicsens_theme", next ? "dark" : "light");
-  };
 
   const canSubmit = useMemo(() => {
     if (!email.trim()) return false;
@@ -53,15 +39,7 @@ function LoginClient() {
 
     const nextPath = explicitNext || (role === "admin" ? "/admin" : "/dashboard");
     const cleanEmail = email.trim().toLowerCase();
-    if (!isValidEmail(cleanEmail)) {
-      setError("Enter a valid email.");
-      return;
-    }
-    if (role === "admin" && !password) {
-      setError("Admin password required.");
-      return;
-    }
-
+    
     setPending(true);
     try {
       const res = await fetch("/api/auth/login", {
@@ -75,130 +53,70 @@ function LoginClient() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) {
-        setError(data?.error || "Login failed.");
+        setError(data?.error || "Authentication failed.");
         return;
       }
       router.push(nextPath);
       router.refresh();
     } catch {
-      setError("Network error. Try again.");
+      setError("Network protocol error.");
     } finally {
       setPending(false);
     }
   };
 
-  const shellBg = isDark
-    ? "bg-slate-950 text-slate-100"
-    : "bg-[#fcfdfe] text-slate-900";
-  const panel = isDark
-    ? "bg-slate-900/30 border border-slate-800/80 backdrop-blur-2xl shadow-2xl shadow-black/10"
-    : "bg-white/70 border border-slate-200/80 backdrop-blur-2xl shadow-2xl shadow-slate-200/50";
-  const input = isDark
-    ? "bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:ring-blue-500/20"
-    : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20";
-
   return (
-    <div className={`min-h-screen ${shellBg} font-sans overflow-hidden relative`}>
-      <div
-        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
-        style={{
-          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, ${
-            isDark ? "rgba(37, 99, 235, 0.12)" : "rgba(37, 99, 235, 0.06)"
-          }, transparent 45%), radial-gradient(600px circle at ${mousePos.x * 0.9}px ${mousePos.y * 1.1}px, ${
-            isDark ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.04)"
-          }, transparent 40%)`,
-        }}
-      />
-      <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-50"
-        style={{
-          background: "radial-gradient(ellipse 100% 80% at 50% -20%, rgba(37, 99, 235, 0.1), transparent)",
-        }}
-      />
-
-      <nav
-        className={`relative z-10 border-b px-8 py-5 flex justify-between items-center backdrop-blur-2xl ${
-          isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200/60 bg-white/60"
-        }`}
-      >
-        <div className="flex items-center gap-4">
-          <div className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
-            <Cpu className="text-white w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tighter leading-none">CivicSens</h1>
-            <p className="text-[9px] font-bold tracking-[0.2em] uppercase opacity-50 mt-1">
-              Citizen Portal • Secure Access
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={toggleTheme}
-          className={`p-2 rounded-xl border transition-all active:scale-[0.97] hover:-translate-y-0.5 ${
-            isDark
-              ? "border-slate-800 bg-slate-900/40 text-slate-300 hover:bg-slate-900"
-              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm"
-          }`}
-          aria-label="Toggle theme"
+    <SectionWrapper className="min-h-[80vh] flex items-center justify-center">
+      <div className="grid lg:grid-cols-2 gap-16 items-center w-full max-w-6xl">
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-      </nav>
-
-      <main className="relative z-10 max-w-6xl mx-auto px-6 py-14">
-        <div className="grid lg:grid-cols-12 gap-10 items-start">
-          <div className="lg:col-span-7">
-            <div className="mb-10 animate-[fadeInUp_650ms_ease-out_both]">
-              <h2 className="text-6xl md:text-7xl font-black tracking-tighter leading-[0.9]">
-                Log in.
-                <br />
-                <span className="text-blue-600">Report faster.</span>
-              </h2>
-              <p className="mt-5 text-slate-500 text-lg font-medium max-w-xl">
-                Enter your email to submit issues. Admin access is a separate secure login.
-              </p>
+          <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] mb-8">
+            Access <br />
+            <span className="text-primary">Intelligence.</span>
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-md leading-relaxed">
+            Secure portal for citizens and administrators. Your data is encrypted and committed to the civic ledger.
+          </p>
+          
+          <div className="mt-12 space-y-4">
+            <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest text-primary/60">
+              <ShieldCheck size={20} />
+              End-to-end encrypted
             </div>
+          </div>
+        </motion.div>
 
-            <div className={`rounded-[3rem] border p-10 backdrop-blur-2xl ${panel} animate-[fadeInUp_800ms_ease-out_both]`}>
-              <div className="flex items-center justify-between gap-4 mb-8">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+        >
+          <GlowBorder glowColor={role === "admin" ? "rgba(139, 92, 246, 0.5)" : "rgba(14, 165, 233, 0.5)"}>
+            <div className="p-8 md:p-12 space-y-8">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-2xl ${isDark ? "bg-blue-500/10 text-blue-400" : "bg-blue-50 text-blue-600"}`}>
-                    {role === "admin" ? <ShieldCheck className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
+                  <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-primary">
+                    {role === "admin" ? <Lock size={20} /> : <Mail size={20} />}
                   </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] opacity-50">
-                      {role === "admin" ? "Admin login" : "User login"}
-                    </p>
-                    <h3 className="text-2xl font-black tracking-tight">
-                      {role === "admin" ? "Admin Interface" : "Submit a report"}
-                    </h3>
-                  </div>
+                  <h3 className="text-2xl font-bold">{role === "admin" ? "Admin Access" : "Citizen Entry"}</h3>
                 </div>
 
-                <div className={`p-1 rounded-2xl border ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
                   <button
-                    type="button"
                     onClick={() => setRole("user")}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      role === "user"
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                        : isDark
-                          ? "text-slate-400 hover:text-white"
-                          : "text-slate-500 hover:text-slate-900"
+                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                      role === "user" ? "bg-primary text-white" : "text-muted-foreground hover:text-white"
                     }`}
                   >
                     User
                   </button>
                   <button
-                    type="button"
                     onClick={() => setRole("admin")}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      role === "admin"
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/25"
-                        : isDark
-                          ? "text-slate-400 hover:text-white"
-                          : "text-slate-500 hover:text-slate-900"
+                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                      role === "admin" ? "bg-primary text-white" : "text-muted-foreground hover:text-white"
                     }`}
                   >
                     Admin
@@ -206,100 +124,69 @@ function LoginClient() {
                 </div>
               </div>
 
-              <form onSubmit={submit} className="space-y-4">
+              <form onSubmit={submit} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest opacity-50">
-                    Email
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                    Identification Email
                   </label>
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     type="email"
-                    placeholder="you@domain.com"
-                    className={`w-full rounded-2xl px-6 py-5 outline-none border transition-all ring-0 focus:ring-4 ${input}`}
+                    placeholder="name@domain.com"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary/50 transition-all"
                   />
                 </div>
 
                 {role === "admin" && (
-                  <div className="space-y-2 animate-[fadeInUp_350ms_ease-out_both]">
-                    <label className="text-[10px] font-black uppercase tracking-widest opacity-50">
-                      Admin password
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-2"
+                  >
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                      Secure Password
                     </label>
                     <input
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type="password"
                       placeholder="••••••••"
-                      className={`w-full rounded-2xl px-6 py-5 outline-none border transition-all ring-0 focus:ring-4 ${input}`}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary/50 transition-all"
                     />
-                    <p className="text-[11px] text-slate-500 font-medium flex items-center gap-2">
-                      <Lock className="w-3.5 h-3.5 opacity-70" />
-                      Admin uses a different password than user login.
-                    </p>
-                  </div>
+                  </motion.div>
                 )}
 
                 {error && (
-                  <div
-                    className={`rounded-2xl border px-5 py-4 text-[12px] font-bold ${
-                      isDark
-                        ? "bg-red-500/10 border-red-500/20 text-red-400"
-                        : "bg-red-50 border-red-200 text-red-700"
-                    } animate-[pop_250ms_ease-out_both]`}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold"
                   >
                     {error}
-                  </div>
+                  </motion.div>
                 )}
 
-                <button
+                <AnimatedButton
                   disabled={!canSubmit || pending}
-                  className={`w-full py-6 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[11px] transition-all active:scale-[0.98] ${
-                    !canSubmit || pending
-                      ? isDark
-                        ? "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
-                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 hover:-translate-y-0.5"
-                  }`}
+                  className="w-full py-5 text-sm tracking-[0.2em] font-black uppercase"
                 >
-                  {pending ? "Authenticating..." : role === "admin" ? "Enter Admin" : "Continue"}
-                </button>
+                  {pending ? (
+                    <Loader2 className="animate-spin mx-auto" size={20} />
+                  ) : (
+                    <div className="flex items-center justify-center gap-2">
+                      Initialize Session <ArrowRight size={18} />
+                    </div>
+                  )}
+                </AnimatedButton>
               </form>
             </div>
-          </div>
-
-          <aside className="lg:col-span-5 space-y-6 animate-[fadeInUp_900ms_ease-out_both]">
-            <div className={`rounded-[3rem] border p-8 backdrop-blur-2xl ${panel}`}>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-3">
-                Quick note
-              </p>
-              <h4 className="text-2xl font-black tracking-tight mb-2">User vs Admin</h4>
-              <ul className="text-sm text-slate-500 font-medium space-y-3">
-                <li>
-                  <span className="font-black text-slate-300">User login:</span>{" "}
-                  email only. Use it to submit issues.
-                </li>
-                <li>
-                  <span className="font-black text-slate-300">Admin login:</span>{" "}
-                  email + password to access the admin interface.
-                </li>
-              </ul>
-              <div className={`mt-6 rounded-2xl border p-4 ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">
-                  Tip
-                </p>
-                <p className="text-sm font-medium text-slate-500">
-                  If you came here for admin, switch to the{" "}
-                  <span className="font-black text-blue-500">Admin</span> tab above.
-                </p>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </main>
-    </div>
+          </GlowBorder>
+        </motion.div>
+      </div>
+    </SectionWrapper>
   );
 }
-import { Suspense } from "react";
 
 export default function Page() {
   return (

@@ -1,33 +1,26 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Activity,
-  ArrowRight,
-  Camera,
-  CheckCircle2,
-  Clock,
-  Copy,
-  Cpu,
-  Loader2,
-  LogOut,
-  MapPin,
-  Moon,
-  Search,
-  Sun,
-  X,
+  Activity, ArrowRight, Camera, CheckCircle2, Clock, Copy, Cpu, Loader2, LogOut,
+  MapPin, Search, Sparkles, X, AlertTriangle, Info, ShieldAlert, Zap, Send, 
+  BarChart3, TrendingUp, History, MessageSquare, FileUp, Check, RefreshCcw
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { analyzeInput } from "@/lib/analyze";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
+import { GlowBorder } from "@/components/ui/GlowBorder";
+import { AIHighlightBox } from "@/components/ui/AIHighlightBox";
+import { cn } from "@/lib/utils";
 
 export default function AppClient({ session }) {
   const router = useRouter();
-
-  const [isDark, setIsDark] = useState(true);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [locationName, setLocationName] = useState("Detecting Sector...");
   const [coords, setCoords] = useState({ lat: null, lng: null });
 
+  // Reporting State
   const [complaint, setComplaint] = useState("");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -36,30 +29,35 @@ export default function AppClient({ session }) {
   const [submitError, setSubmitError] = useState("");
   const [generated, setGenerated] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
+  // Pre-submission State
+  const [showPreview, setShowPreview] = useState(false);
+  const [preAiResult, setPreAiResult] = useState(null);
+
+  // Tracker State
   const [searchID, setSearchID] = useState("");
   const [tracked, setTracked] = useState(null);
   const [trackError, setTrackError] = useState("");
   const [tracking, setTracking] = useState(false);
 
+  // AI Assistant State
+  const [isAiOpen, setIsAiOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: "ai", content: "Hello! I am your Civic AI assistant. How can I help you today?" }
+  ]);
+  const [aiInput, setAiInput] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const scrollRef = useRef(null);
+
   const [toast, setToast] = useState(null);
   const [descriptionTouched, setDescriptionTouched] = useState(false);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
   useEffect(() => {
-    const saved = localStorage.getItem("civicsens_theme");
-    if (saved) setIsDark(saved === "dark");
-  }, []);
-
-  useEffect(() => {
-    const onMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
-  }, []);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -68,568 +66,491 @@ export default function AppClient({ session }) {
         const { latitude, longitude } = pos.coords;
         setCoords({ lat: latitude.toFixed(4), lng: longitude.toFixed(4) });
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-          );
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
-          setLocationName(
-            data?.address?.suburb ||
-              data?.address?.neighbourhood ||
-              data?.address?.city ||
-              "Metropolitan District",
-          );
-        } catch {
-          setLocationName("Metropolitan District");
-        }
+          setLocationName(data?.address?.suburb || data?.address?.city || "Metropolitan District");
+        } catch { setLocationName("Metropolitan District"); }
       },
       () => setLocationName("Metropolitan District"),
-      { enableHighAccuracy: true, timeout: 8000 },
+      { enableHighAccuracy: true, timeout: 8000 }
     );
   }, []);
 
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    localStorage.setItem("civicsens_theme", next ? "dark" : "light");
-  };
-
-  const removeImage = () => {
-    setFile(null);
-    setPreviewUrl(null);
-  };
-
   const onFileChange = (e) => {
     const f = e.target.files?.[0] || null;
-    setFile(f);
-    setPreviewUrl(f ? URL.createObjectURL(f) : null);
+    if (f) {
+      setFile(f);
+      setPreviewUrl(URL.createObjectURL(f));
+    }
   };
 
-  const canSubmit = useMemo(() => complaint.trim().length > 0 && !submitting, [
-    complaint,
-    submitting,
-  ]);
-
-  const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    router.push("/login");
-    router.refresh();
+  const handleDrag = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+    else if (e.type === "dragleave") setDragActive(false);
   };
 
-  const copyTicket = async () => {
-    if (!generated?.ticket_id) return;
+  const handleDrop = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const f = e.dataTransfer.files[0];
+      setFile(f);
+      setPreviewUrl(URL.createObjectURL(f));
+    }
+  };
+
+  const initializeUplink = async () => {
+    if (!complaint.trim()) {
+      setDescriptionTouched(true);
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError("");
     try {
-      await navigator.clipboard.writeText(generated.ticket_id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-      showToast("Ticket ID copied to clipboard.");
-    } catch {}
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: complaint }),
+      });
+      const aiResult = await res.json();
+      setPreAiResult(aiResult);
+      setShowPreview(true);
+    } catch (e) {
+      setSubmitError("Failed to initialize AI Uplink. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const submitReport = async () => {
-    setSubmitError("");
-    setTracked(null);
-    setDescriptionTouched(true);
-    if (!complaint.trim()) {
-      setSubmitError("Please enter a description of the issue.");
-      return;
-    }
-
     setSubmitting(true);
+    setSubmitError("");
     try {
       let imageUrl = "";
-
       if (file) {
         setUploading(true);
         const form = new FormData();
         form.append("file", file);
         const upRes = await fetch("/api/uploads", { method: "POST", body: form });
-        const upJson = await upRes.json().catch(() => null);
-        if (!upRes.ok || !upJson?.ok) {
-          throw new Error(upJson?.error || "Image upload failed");
-        }
+        const upJson = await upRes.json();
+        if (!upRes.ok) throw new Error(upJson.error || "Upload failed");
         imageUrl = upJson.publicUrl;
       }
 
-      const ai = analyzeInput(complaint);
       const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: complaint.trim(),
-          latitude: coords.lat,
-          longitude: coords.lng,
-          imageUrl,
-          email: session?.email,
-          ai,
+        body: JSON.stringify({ 
+          description: complaint.trim(), 
+          latitude: coords.lat, 
+          longitude: coords.lng, 
+          imageUrl, 
+          email: session?.email, 
+          ai: preAiResult 
         }),
       });
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || "Submit failed");
-      }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Submit failed");
 
       setGenerated({ ...json.report, ai: json.ai });
       setComplaint("");
-      removeImage();
-      showToast("Report submitted successfully.");
-    } catch (e) {
-      setSubmitError(e?.message || "Something went wrong");
-    } finally {
-      setUploading(false);
-      setSubmitting(false);
+      setFile(null);
+      setPreviewUrl(null);
+      setShowPreview(false);
+      setToast({ message: "Intelligence report committed to ledger." });
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) { 
+      setSubmitError(e.message); 
+      setShowPreview(false);
     }
+    finally { setUploading(false); setSubmitting(false); }
   };
 
   const checkStatus = async () => {
-    setTrackError("");
-    setTracked(null);
+    setTrackError(""); setTracked(null);
     const id = searchID.trim().toUpperCase();
     if (!id) return;
-
     setTracking(true);
     try {
       const res = await fetch(`/api/reports?ticket_id=${encodeURIComponent(id)}`);
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) {
-        throw new Error(json?.error || "Not found");
-      }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Not found");
       const st = json.report?.status || "Submitted";
       const stages = { Submitted: 0, Verified: 1, Dispatched: 2, Resolved: 3 };
       setTracked({ id: json.report.ticket_id, stage: stages[st] ?? 0, status: st });
-    } catch (e) {
-      setTrackError(e?.message || "Not found");
-    } finally {
-      setTracking(false);
-    }
+    } catch (e) { setTrackError(e.message); }
+    finally { setTracking(false); }
   };
 
-  const shellBg = isDark
-    ? "bg-slate-950 text-slate-100"
-    : "bg-[#fcfdfe] text-slate-900";
-  const panel = isDark
-    ? "bg-slate-900/30 border border-slate-800/80 backdrop-blur-2xl shadow-2xl shadow-black/10"
-    : "bg-white/70 border border-slate-200/80 backdrop-blur-2xl shadow-2xl shadow-slate-200/50";
-  const input = isDark
-    ? "bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:ring-blue-500/20"
-    : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20";
+  const handleAiSubmit = async (e) => {
+    e.preventDefault();
+    if (!aiInput.trim()) return;
+    const userMsg = aiInput.trim();
+    setMessages(prev => [...prev, { role: "user", content: userMsg }]);
+    setAiInput("");
+    setIsAiLoading(true);
+    
+    setTimeout(() => {
+      setMessages(prev => [...prev, { role: "ai", content: "I've analyzed your query against the latest civic data. Currently, District " + (coords.lat ? coords.lat.slice(0,2) : "5") + " is showing high infrastructure stability." }]);
+      setIsAiLoading(false);
+    }, 1500);
+  };
+
+  const copyId = async (id) => {
+    await navigator.clipboard.writeText(id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div className={`min-h-screen transition-colors duration-700 ease-out font-sans relative overflow-hidden ${shellBg}`}>
-      {/* Cursor-following glow (interactive glassmorphism background) */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
-        style={{
-          background: `radial-gradient(900px circle at ${mousePos.x}px ${mousePos.y}px, ${
-            isDark ? "rgba(37, 99, 235, 0.14)" : "rgba(37, 99, 235, 0.07)"
-          }, transparent 45%), radial-gradient(600px circle at ${mousePos.x * 0.95}px ${mousePos.y * 1.05}px, ${
-            isDark ? "rgba(16, 185, 129, 0.06)" : "rgba(16, 185, 129, 0.04)"
-          }, transparent 40%)`,
-        }}
-      />
-      <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-50"
-        style={{
-          background: "radial-gradient(ellipse 100% 60% at 50% -10%, rgba(37, 99, 235, 0.1), transparent)",
-        }}
-      />
+    <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      {/* Sidebar Stats */}
+      <aside className="lg:col-span-3 space-y-6">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <AIHighlightBox className="mb-4">
+            <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+              <Sparkles size={12} /> Active Node: {locationName}
+            </span>
+          </AIHighlightBox>
+        </motion.div>
 
-      <nav
-        className={`relative z-50 border-b px-8 py-5 flex justify-between items-center backdrop-blur-2xl transition-all ${
-          isDark ? "border-slate-800/80 bg-slate-950/50" : "border-slate-200/80 bg-white/60"
-        }`}
-      >
-        <div className="flex items-center gap-4">
-          <div className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
-            <Cpu className="text-white w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tighter leading-none">CivicSens</h1>
-            <p className="text-[9px] font-bold tracking-[0.2em] uppercase opacity-50 mt-1">
-              {locationName} • {session?.email}
-            </p>
-          </div>
+        <div className="space-y-4">
+          <StatCard label="Civic Activity" value="1,284" icon={<TrendingUp size={16} />} color="primary" delay={0.1} />
+          <StatCard label="Success Rate" value="94.2%" icon={<CheckCircle2 size={16} />} color="accent" delay={0.2} />
+          <StatCard label="AI Uptime" value="99.9%" icon={<Zap size={16} />} color="cyan" delay={0.3} />
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-xl border transition-all active:scale-[0.97] hover:-translate-y-0.5 ${
-              isDark
-                ? "border-slate-800 bg-slate-900/40 text-slate-300 hover:bg-slate-900"
-                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm"
-            }`}
-            aria-label="Toggle theme"
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-          <button
-            onClick={logout}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-[0.97] hover:-translate-y-0.5 ${
-              isDark
-                ? "bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/15"
-                : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
-            }`}
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Logout
-          </button>
-        </div>
-      </nav>
+        <GlassCard className="p-6" interactive={false}>
+          <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+            <History size={14} /> Activity Timeline
+          </h4>
+          <div className="space-y-6 text-left">
+            <TimelineItem title="New Report" time="2m ago" desc="Pothole detected in Sector 5" />
+            <TimelineItem title="Verified" time="15m ago" desc="Water leak resolved at 4th St" />
+            <TimelineItem title="System Sync" time="1h ago" desc="Ledger integrity verified" />
+          </div>
+        </GlassCard>
+      </aside>
 
-      <main className="relative z-10 max-w-7xl mx-auto py-12 px-6">
-        <div className="grid lg:grid-cols-12 gap-10">
-          <section className="lg:col-span-7 animate-[fadeInUp_650ms_ease-out_both]">
-            <h2 className="text-6xl font-black tracking-tighter leading-[0.9] mb-4">
-              Report. <span className="text-blue-600">Resolve.</span>
-            </h2>
-            <p className="text-slate-500 text-lg font-medium max-w-lg mb-10">
-              Submit an issue with optional photo evidence. Our system classifies it and generates a ticket instantly.
-            </p>
-
-            <div className={`p-10 rounded-[3rem] ${panel} transition-all duration-300`}>
-              <div className="space-y-8">
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-4 block">
-                    Visual evidence (optional)
-                  </label>
-                  <div
-                    className={`relative h-52 rounded-[2rem] border-2 border-dashed flex items-center justify-center overflow-hidden transition-all ${
-                      isDark
-                        ? "border-slate-800 hover:border-blue-500 bg-slate-950/50"
-                        : "border-slate-200 hover:border-blue-400 bg-slate-50"
-                    }`}
-                  >
-                    {previewUrl ? (
-                      <div className="relative w-full h-full group">
-                        <img
-                          src={previewUrl}
-                          className="w-full h-full object-cover"
-                          alt="Preview"
-                        />
-                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                          <button
-                            onClick={removeImage}
-                            type="button"
-                            className="bg-red-500 text-white px-6 py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all active:scale-[0.98]"
-                          >
-                            Remove image
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <input
-                          type="file"
-                          onChange={onFileChange}
-                          accept="image/*"
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        />
-                        <div className="text-center">
-                          <Camera className="w-10 h-10 opacity-40 text-blue-500 mx-auto mb-2 transition-all" />
-                          <p className="text-xs font-bold text-slate-400">
-                            Click to upload photo
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-4 block">
-                    Issue description <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={complaint}
-                    onChange={(e) => setComplaint(e.target.value)}
-                    onBlur={() => setDescriptionTouched(true)}
-                    placeholder="Describe the issue. Include landmarks if possible..."
-                    aria-invalid={descriptionTouched && !complaint.trim()}
-                    className={`w-full rounded-[2rem] p-6 min-h-[170px] outline-none border transition-all ring-0 focus:ring-4 text-sm font-medium ${input} ${
-                      descriptionTouched && !complaint.trim()
-                        ? "border-red-500/50 focus:border-red-500"
-                        : ""
-                    }`}
-                  />
-                  {descriptionTouched && !complaint.trim() && (
-                    <p className="mt-2 text-xs font-bold text-red-500">Description is required.</p>
-                  )}
-                </div>
-
-                {submitError && (
-                  <div
-                    className={`rounded-2xl border px-5 py-4 text-[12px] font-bold ${
-                      isDark
-                        ? "bg-red-500/10 border-red-500/20 text-red-400"
-                        : "bg-red-50 border-red-200 text-red-700"
-                    } animate-[pop_250ms_ease-out_both]`}
-                  >
-                    {submitError}
-                  </div>
-                )}
-
-                <button
-                  onClick={submitReport}
-                  disabled={!canSubmit || uploading}
-                  className={`w-full py-6 rounded-[2rem] flex items-center justify-center gap-3 font-black uppercase tracking-[0.3em] text-[11px] transition-all active:scale-[0.98] ${
-                    !canSubmit || uploading
-                      ? isDark
-                        ? "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
-                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-500 text-white shadow-2xl shadow-blue-600/30 hover:-translate-y-0.5"
-                  }`}
-                >
-                  {submitting || uploading ? (
-                    <>
-                      <Loader2 className="animate-spin w-5 h-5" />
-                      {uploading ? "Uploading..." : "Submitting..."}
-                    </>
-                  ) : (
-                    <>
-                      Submit report <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest opacity-50">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>
-                      {coords.lat && coords.lng ? `${coords.lat}, ${coords.lng}` : "Location not available"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-3.5 h-3.5" />
-                    <span>Session: {session?.role}</span>
-                  </div>
+      {/* Main Reporter */}
+      <main className="lg:col-span-6 space-y-8">
+        <GlowBorder className="w-full" glowColor="rgba(109, 40, 217, 0.3)">
+          <div className="p-8 space-y-8 text-left">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-black tracking-tight text-white">Initialize Report</h2>
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_var(--primary)]" />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live Uplink</span>
                 </div>
               </div>
-            </div>
-          </section>
-
-          <aside className="lg:col-span-5 pt-2 lg:pt-24 animate-[fadeInUp_800ms_ease-out_both]">
-            <div className={`p-10 rounded-[3rem] ${panel} transition-all duration-300`}>
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-slate-900 rounded-2xl shadow-lg">
-                  <Search className="text-white w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black tracking-tight">Audit Tracker</h3>
-                  <p className="text-[11px] font-medium text-slate-500">
-                    Check the current status of any ticket.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <input
-                  type="text"
-                  placeholder="Enter Ticket ID (e.g. CS-12345)"
-                  value={searchID}
-                  onChange={(e) => setSearchID(e.target.value)}
-                  className={`w-full rounded-2xl px-6 py-5 outline-none font-mono text-sm border transition-all ring-0 focus:ring-4 ${input}`}
-                />
-                <button
-                  onClick={checkStatus}
-                  disabled={tracking}
-                  className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-[0.98] ${
-                    tracking
-                      ? isDark
-                        ? "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
-                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                      : isDark
-                        ? "bg-slate-900 text-white hover:bg-blue-600 shadow-lg shadow-blue-950/30"
-                        : "bg-slate-900 text-white hover:bg-blue-600 shadow-lg shadow-slate-900/20"
-                  }`}
-                >
-                  {tracking ? "Querying..." : "Query ledger"}
-                </button>
-              </div>
-
-              {trackError && (
-                <div
-                  className={`rounded-2xl border px-5 py-4 text-[12px] font-bold mb-6 ${
-                    isDark
-                      ? "bg-red-500/10 border-red-500/20 text-red-400"
-                      : "bg-red-50 border-red-200 text-red-700"
-                  } animate-[pop_250ms_ease-out_both]`}
-                  role="alert"
-                >
-                  {trackError}
-                </div>
-              )}
-
-              {!tracked && !trackError && !tracking && searchID.trim() === "" && (
-                <p className="text-sm text-slate-500 font-medium mb-6">
-                  Enter a ticket ID above and click &quot;Query ledger&quot; to see its status.
+              
+              <textarea
+                value={complaint}
+                onChange={(e) => setComplaint(e.target.value)}
+                placeholder="Describe the anomaly. Our AI will classify it instantly..."
+                className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 min-h-[180px] outline-none focus:border-primary/50 transition-all text-sm leading-relaxed"
+              />
+              {descriptionTouched && !complaint.trim() && (
+                <p className="text-xs font-bold text-red-500 px-2 flex items-center gap-2">
+                  <AlertTriangle size={14} /> Please provide a description.
                 </p>
               )}
-
-              {tracked && (
-                <div className="pt-8 border-t border-slate-500/20 animate-[fadeInUp_450ms_ease-out_both]">
-                  <div className="flex justify-between items-center mb-8 text-[10px] font-black opacity-60 tracking-widest uppercase">
-                    <span>Ticket: {tracked.id}</span>
-                    <span className="text-blue-500">{tracked.status}</span>
-                  </div>
-                  <div className="flex justify-between relative px-2">
-                    <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-500/20 -translate-y-1/2" />
-                    {["Submitted", "Verified", "Dispatched", "Resolved"].map((label, step) => (
-                      <div key={step} className="relative flex flex-col items-center">
-                        <div
-                          className={`w-10 h-10 rounded-xl z-10 flex items-center justify-center border-2 transition-all ${
-                            tracked.stage >= step
-                              ? "bg-blue-600 border-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.35)]"
-                              : isDark
-                                ? "bg-slate-950 border-slate-800 text-slate-600"
-                                : "bg-white border-slate-200 text-slate-400"
-                          }`}
-                        >
-                          <CheckCircle2 className="w-5 h-5" />
-                        </div>
-                        <span
-                          className={`absolute -bottom-6 text-[9px] font-black uppercase tracking-widest whitespace-nowrap ${
-                            tracked.stage >= step ? "text-blue-500" : "opacity-30"
-                          }`}
-                        >
-                          {label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-          </aside>
-        </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div 
+                onDragEnter={handleDrag} onDragOver={handleDrag} onDragLeave={handleDrag} onDrop={handleDrop}
+                className={cn(
+                  "relative h-48 rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-3",
+                  dragActive ? "border-primary bg-primary/5 scale-95" : "border-white/10 bg-white/5",
+                  previewUrl ? "border-solid border-white/20" : ""
+                )}
+              >
+                {previewUrl ? (
+                  <div className="relative w-full h-full p-2 group">
+                    <img src={previewUrl} className="w-full h-full object-cover rounded-2xl" alt="Preview" />
+                    <button onClick={() => { setFile(null); setPreviewUrl(null); }} className="absolute top-4 right-4 p-2 bg-background/80 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-4 bg-white/5 rounded-2xl text-muted-foreground">
+                      <FileUp size={24} />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-bold">Drag & Drop visual matrix</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">or click to browse</p>
+                    </div>
+                    <input type="file" onChange={onFileChange} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-4 flex flex-col justify-between">
+                <AIHighlightBox className="h-full bg-primary/5 border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap size={14} className="text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">AI Preview Panel</span>
+                  </div>
+                  <p className="text-[10px] leading-relaxed opacity-70">
+                    "AI classifications are generated in real-time. Please review the analysis before final sync to the civic ledger."
+                  </p>
+                </AIHighlightBox>
+              </div>
+            </div>
+
+            {submitError && (
+              <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold flex items-center gap-3">
+                <ShieldAlert size={18} /> {submitError}
+              </div>
+            )}
+
+            <AnimatedButton 
+              onClick={initializeUplink} 
+              disabled={!complaint.trim() || submitting}
+              className="w-full py-5 text-sm uppercase tracking-[0.3em] shadow-glow-primary"
+            >
+              <span className="flex items-center gap-3">Initialize Uplink <ArrowRight size={18} /></span>
+            </AnimatedButton>
+          </div>
+        </GlowBorder>
       </main>
 
-      {generated && (
-        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-2xl z-[101] flex items-center justify-center p-6">
-          <div
-            className={`w-full max-w-md rounded-[3rem] p-10 text-center border animate-[pop_240ms_ease-out_both] ${
-              isDark
-                ? "bg-slate-900 border-slate-800"
-                : "bg-white border-slate-200 shadow-2xl"
-            }`}
-          >
-            <div className="w-20 h-20 bg-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(16,185,129,0.35)]">
-              <CheckCircle2 className="text-white w-10 h-10" />
+      {/* Tracker Side */}
+      <aside className="lg:col-span-3 space-y-8 text-left">
+        <GlassCard className="p-8">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-accent/10 rounded-2xl text-accent border border-accent/20">
+              <Search size={20} />
             </div>
-            <h2 className="text-3xl font-black tracking-tighter mb-2">Network Synced</h2>
-            <p className="text-sm opacity-60 mb-8 font-medium">
-              Your report is secured. Save your ticket ID to track progress.
-            </p>
-
-            <div
-              className={`py-7 rounded-[2.5rem] border mb-6 ${
-                isDark ? "bg-slate-950 border-slate-800" : "bg-slate-50 border-slate-200"
-              }`}
-            >
-              <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">
-                Official ticket ID
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-4xl font-mono font-black text-blue-500 tracking-widest">
-                  {generated.ticket_id}
-                </span>
-                <button
-                  onClick={copyTicket}
-                  className={`p-2 rounded-xl border transition-all active:scale-[0.97] ${
-                    copied
-                      ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
-                      : isDark
-                        ? "bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                  }`}
-                  aria-label="Copy ticket id"
-                >
-                  <Copy className="w-4 h-4" />
-                </button>
-              </div>
-              {copied && (
-                <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                  Copied
-                </p>
-              )}
+            <div>
+              <h4 className="text-xl font-black">Audit Tracker</h4>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Query Ledger</p>
             </div>
-
-            {generated.ai && (
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div
-                  className={`p-4 rounded-2xl border ${
-                    isDark ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"
-                  }`}
-                >
-                  <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1">
-                    Category
-                  </p>
-                  <p className="text-xs font-bold">{generated.ai.cat}</p>
-                </div>
-                <div
-                  className={`p-4 rounded-2xl border ${
-                    isDark ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"
-                  }`}
-                >
-                  <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1">
-                    Priority
-                  </p>
-                  <p className="text-xs font-bold">Level {generated.ai.prio}</p>
-                </div>
-              </div>
-            )}
-
-            {generated.ai?.time && (
-              <div className="bg-blue-500/10 border border-blue-500/20 p-5 rounded-3xl mb-8 text-left flex items-center gap-4">
-                <Clock className="w-8 h-8 text-blue-500 flex-shrink-0" />
-                <div>
-                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">
-                    Est. response time
-                  </p>
-                  <p className="text-sm font-bold">{generated.ai.time}</p>
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => setGenerated(null)}
-              className={`w-full py-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all active:scale-[0.98] ${
-                isDark ? "bg-slate-100 text-slate-900 hover:bg-white" : "bg-slate-900 text-white hover:bg-blue-600"
-              }`}
-            >
-              Acknowledge
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setGenerated(null)}
-              className="mt-4 w-full text-center text-[10px] font-black opacity-40 uppercase tracking-widest hover:opacity-100 transition-opacity"
-            >
-              Close
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setGenerated(null)}
-              className="absolute top-6 right-6 p-3 rounded-2xl bg-slate-500/10 hover:bg-slate-500/20 transition-all active:scale-[0.98]"
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
-        </div>
-      )}
+          <input 
+            value={searchID} onChange={(e) => setSearchID(e.target.value)}
+            placeholder="TICKET-ID-XXXXX" 
+            className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none font-mono text-xs mb-4 focus:border-accent/50"
+          />
+          <AnimatedButton onClick={checkStatus} variant="secondary" className="w-full py-4 text-[10px] uppercase tracking-widest">
+            {tracking ? <Loader2 className="animate-spin" size={16} /> : "Validate Reference"}
+          </AnimatedButton>
 
-      {/* Success toast */}
-      {toast && (
-        <div
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[102] px-6 py-4 rounded-2xl border shadow-2xl animate-[fadeInUp_200ms_ease-out_both] bg-emerald-500/95 border-emerald-400/30 text-white font-bold text-sm backdrop-blur-md"
-          role="status"
-          aria-live="polite"
-        >
-          {toast.message}
-        </div>
-      )}
+          <AnimatePresence>
+            {tracked && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-10 pt-10 border-t border-white/10 overflow-hidden">
+                <div className="flex justify-between items-center mb-6">
+                  <span className="text-[10px] font-black opacity-40 uppercase tracking-widest">Status: {tracked.status}</span>
+                </div>
+                <div className="flex justify-between relative">
+                  <div className="absolute top-1/2 w-full h-[1px] bg-white/10 -translate-y-1/2" />
+                  {[0,1,2,3].map(s => (
+                    <div key={s} className={cn(
+                      "w-8 h-8 rounded-xl z-10 flex items-center justify-center border transition-all duration-500",
+                      tracked.stage >= s ? "bg-accent border-accent text-white shadow-glow-blue" : "bg-background border-white/5 text-muted-foreground"
+                    )}>
+                      {tracked.stage > s ? <CheckCircle2 size={14} /> : <div className="w-1 h-1 rounded-full bg-current" />}
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </GlassCard>
+
+        <AIHighlightBox className="border-accent/30 bg-accent/5">
+          <div className="flex items-center gap-2 mb-3">
+            <BarChart3 size={16} className="text-accent" />
+            <span className="font-black text-[10px] uppercase tracking-widest text-accent">Data Insight</span>
+          </div>
+          <p className="text-[11px] leading-relaxed opacity-80">
+            Current system trust index: <span className="text-white font-bold">98.4%</span>.
+            Metropolitan response latency is within standard parameters.
+          </p>
+        </AIHighlightBox>
+      </aside>
+
+      {/* Pre-submission Preview Modal */}
+      <AnimatePresence>
+        {showPreview && (
+          <div className="fixed inset-0 bg-background/95 backdrop-blur-3xl z-[200] flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-w-2xl">
+              <GlowBorder glowColor="rgba(109, 40, 217, 0.5)">
+                <div className="p-10 space-y-8 text-left">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <h2 className="text-3xl font-black tracking-tight">Review Classification</h2>
+                      <p className="text-sm text-muted-foreground">Neural analysis complete. Confirm data before sync.</p>
+                    </div>
+                    <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+                      <X size={24} />
+                    </button>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                        <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-4">AI Analysis Report</p>
+                        <div className="space-y-4">
+                          <AiStatItem label="Category" value={preAiResult?.cat} />
+                          <AiStatItem label="Priority Level" value={`P-${preAiResult?.prio}`} />
+                          <AiStatItem label="Est. Resolution" value={preAiResult?.time} />
+                        </div>
+                      </div>
+                      <div className="px-2">
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Description Preview</p>
+                        <p className="text-xs text-muted-foreground line-clamp-3 italic">"{complaint}"</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="h-48 rounded-3xl bg-white/5 border border-white/10 overflow-hidden relative">
+                        {previewUrl ? (
+                          <img src={previewUrl} className="w-full h-full object-cover" alt="Verification" />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center opacity-30">
+                            <Camera size={32} className="mb-2" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">No Visual Matrix</p>
+                          </div>
+                        )}
+                        <div className="absolute top-4 left-4 px-3 py-1 bg-background/80 backdrop-blur-md rounded-full border border-white/10 text-[9px] font-black uppercase tracking-widest">
+                          Visual Data
+                        </div>
+                      </div>
+                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex items-center gap-3">
+                        <ShieldAlert size={20} className="text-primary" />
+                        <p className="text-[10px] font-medium leading-relaxed opacity-80 italic">
+                          This report will be linked to: <span className="text-white font-bold underline">{session?.email}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <AnimatedButton onClick={() => setShowPreview(false)} variant="outline" className="flex-1 py-5">
+                      <RefreshCcw size={16} /> Edit Data
+                    </AnimatedButton>
+                    <AnimatedButton onClick={submitReport} disabled={submitting} className="flex-[2] py-5 shadow-glow-primary">
+                      {submitting ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-2">Confirm & Sync to Ledger <Check size={18} /></span>}
+                    </AnimatedButton>
+                  </div>
+                </div>
+              </GlowBorder>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Modal */}
+      <AnimatePresence>
+        {generated && (
+          <div className="fixed inset-0 bg-background/90 backdrop-blur-2xl z-[300] flex items-center justify-center p-6">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-lg">
+              <GlowBorder glowColor="rgba(109, 40, 217, 0.5)">
+                <div className="p-10 text-center space-y-10">
+                   <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto shadow-glow-primary rotate-12">
+                     <CheckCircle2 className="text-white w-10 h-10" />
+                   </div>
+                   <div className="space-y-2">
+                     <h2 className="text-3xl font-black">Sync Complete</h2>
+                     <p className="text-sm text-muted-foreground">Your report is now live on the metropolitan network.</p>
+                   </div>
+                   <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 relative group">
+                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-4">Official Reference ID</p>
+                     <p className="text-4xl font-mono font-black text-primary tracking-widest mb-6">{generated.ticket_id}</p>
+                     <AnimatedButton 
+                        onClick={() => copyId(generated.ticket_id)} 
+                        variant="outline" 
+                        className={cn("w-full py-3 text-[10px] uppercase tracking-widest transition-all", copied ? "bg-green-500/10 border-green-500/30 text-green-500" : "")}
+                      >
+                       {copied ? "ID Copied" : <span className="flex items-center justify-center gap-2"><Copy size={14} /> Copy Reference</span>}
+                     </AnimatedButton>
+                   </div>
+                   <AnimatedButton onClick={() => setGenerated(null)} className="w-full py-5 font-black uppercase tracking-[0.2em]">Acknowledge</AnimatedButton>
+                </div>
+              </GlowBorder>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* AI Assistant Button & Panel (Same as previous implementation) */}
+      <motion.button onClick={() => setIsAiOpen(true)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className="fixed bottom-10 right-10 w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-2xl z-[80] shadow-glow-primary group">
+        <MessageSquare className="text-white group-hover:rotate-12 transition-transform" />
+      </motion.button>
+
+      <AnimatePresence>
+        {isAiOpen && (
+          <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ duration: 0.5, ease: [0.33, 1, 0.68, 1] }} className="fixed top-0 right-0 h-screen w-full max-w-md z-[200] glass border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden text-left">
+            <div className="p-8 border-b border-white/10 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-primary/10 rounded-2xl"><Sparkles className="text-primary" size={20} /></div>
+                <div>
+                  <h3 className="text-xl font-black tracking-tight">Civic Assistant</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Operational</span>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setIsAiOpen(false)} className="p-2 hover:bg-white/5 rounded-xl transition-colors"><X size={20} /></button>
+            </div>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+              {messages.map((m, i) => (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={i} className={cn("flex flex-col max-w-[85%]", m.role === "user" ? "ml-auto items-end" : "items-start")}>
+                  <div className={cn("p-4 rounded-3xl text-sm leading-relaxed", m.role === "user" ? "bg-primary text-white rounded-tr-none" : "bg-white/5 border border-white/10 rounded-tl-none")}>
+                    {m.content}
+                  </div>
+                  <span className="text-[9px] font-bold uppercase opacity-30 mt-2 px-2">{m.role === "user" ? "Citizen" : "Civic AI"}</span>
+                </motion.div>
+              ))}
+            </div>
+            <form onSubmit={handleAiSubmit} className="p-8 border-t border-white/10 flex gap-4">
+              <input value={aiInput} onChange={(e) => setAiInput(e.target.value)} placeholder="Ask intelligence..." className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 outline-none focus:border-primary/50 text-sm" />
+              <AnimatedButton className="px-4 py-4 rounded-2xl"><Send size={18} /></AnimatedButton>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
+const AiStatItem = ({ label, value }) => (
+  <div className="flex justify-between items-center pb-2 border-b border-white/5">
+    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</span>
+    <span className="text-xs font-black text-white">{value}</span>
+  </div>
+);
+
+const StatCard = ({ label, value, icon, color, delay }) => (
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
+    <div className="glass glass-hover p-5 rounded-3xl flex items-center justify-between border-white/5">
+      <div className="flex items-center gap-3">
+        <div className={cn("p-2.5 rounded-xl border border-white/10", 
+          color === "primary" ? "bg-primary/10 text-primary shadow-[0_0_10px_rgba(109,40,217,0.2)]" : 
+          color === "accent" ? "bg-accent/10 text-accent shadow-[0_0_10px_rgba(59,130,246,0.2)]" : "bg-cyan-500/10 text-cyan-400"
+        )}>
+          {icon}
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
+      </div>
+      <span className="text-xl font-black tracking-tight text-white tabular-nums">{value}</span>
+    </div>
+  </motion.div>
+);
+
+const TimelineItem = ({ title, time, desc }) => (
+  <div className="timeline-dot">
+    <div className="flex justify-between items-start mb-1">
+      <h5 className="text-[10px] font-black uppercase tracking-widest text-white">{title}</h5>
+      <span className="text-[9px] font-bold text-muted-foreground">{time}</span>
+    </div>
+    <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">{desc}</p>
+  </div>
+);

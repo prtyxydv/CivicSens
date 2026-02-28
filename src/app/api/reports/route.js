@@ -61,10 +61,11 @@ export async function POST(request) {
     return jsonError(e?.message || "Server Supabase is not configured", 500);
   }
 
-  const ai = analyzeInput(description);
+  // Use body AI if provided (confirmed by user), else regenerate
+  const ai = body?.ai || analyzeInput(description);
   const ticketId = makeTicketId();
 
-  const basePayload = {
+  const payload = {
     ticket_id: ticketId,
     category: ai.cat,
     description,
@@ -74,21 +75,20 @@ export async function POST(request) {
     risk_assessment: ai.msg,
     latitude,
     longitude,
+    email: email // Primary choice
   };
 
-  const payloadWithEmail = email
-    ? { ...basePayload, reporter_email: email }
-    : basePayload;
+  const attemptInsert = async (p) =>
+    await supabase.from("reports").insert([p]).select("*").single();
 
-  const attemptInsert = async (payload) =>
-    await supabase.from("reports").insert([payload]).select("*").single();
-
-  let insertResult = await attemptInsert(payloadWithEmail);
-  if (insertResult.error && payloadWithEmail.reporter_email) {
-    // If the DB doesn't have reporter_email column, retry without it.
+  let insertResult = await attemptInsert(payload);
+  
+  if (insertResult.error) {
     const msg = String(insertResult.error.message || "");
-    if (/reporter_email/i.test(msg) || /column/i.test(msg)) {
-      insertResult = await attemptInsert(basePayload);
+    // Fallback if column 'email' doesn't exist but 'reporter_email' does
+    if (/email/i.test(msg) || /column/i.test(msg)) {
+      const { email: _, ...rest } = payload;
+      insertResult = await attemptInsert({ ...rest, reporter_email: email });
     }
   }
 
@@ -96,10 +96,15 @@ export async function POST(request) {
     return jsonError(`Insert failed: ${insertResult.error.message}`, 500);
   }
 
+  // Ensure returning email field consistently for the UI
+  const finalData = insertResult.data;
+  if (!finalData.email && finalData.reporter_email) {
+    finalData.email = finalData.reporter_email;
+  }
+
   return NextResponse.json({
     ok: true,
-    report: insertResult.data,
+    report: finalData,
     ai,
   });
 }
-
