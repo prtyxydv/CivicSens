@@ -52,31 +52,42 @@ Citizens report potholes, water leaks, and safety hazards through scattered chan
 | **Deploy** | Vercel |
 
 ---
+## Architecture
+
+-Client → Next.js frontend
+
+-API Routes → Auth, reports, uploads
+
+-Supabase PostgreSQL → structured ticket storage
+
+-Supabase Storage → image handling
+
+-Secure server-side operations using service role key
 
 ## Why I Built This
 
-I wanted to build a real-world SaaS MVP that:
+-I wanted to build a real-world SaaS MVP that:
 
-Uses authentication and database logic
+-Uses authentication and database logic
 
-Simulates admin-user architecture
+-Simulates admin-user architecture
 
-Demonstrates production-style deployment
+-Demonstrates production-style deployment
 
-Solves a meaningful civic-tech problem
+-Solves a meaningful civic-tech problem
 ---
 
 ## Future Improvements
 
-Map-based issue visualization
+-Map-based issue visualization
 
-AI-based severity scoring
+-AI-based severity scoring
 
-Role-based permissions expansion
+-Role-based permissions expansion
 
-Notification system
+-Notification system
 
-Public transparency dashboard
+-Public transparency dashboard
 
 ## Screenshots
 
