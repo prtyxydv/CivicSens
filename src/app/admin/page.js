@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useContext } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ThemeContext } from './layout'; // Import the context from layout
+import { ThemeContext } from './admin-shell'; // Import the context from admin shell
 import { 
   TrendingUp, 
   AlertCircle, 
