@@ -8,7 +8,7 @@ CivicSens is an AI-driven civic triage platform: citizens submit infrastructure 
 
 ## Demo
 
-**Live app:** [CivicSens on Vercel](https://myapp-two-peach.vercel.app/)
+**Live app:** [CivicSens on Vercel](https://civic-sens.vercel.app/)
 
 - **Landing:** Clear value proposition, problem, who it’s for, and one strong differentiator (AI classification).
 - **User flow:** Log in with email → submit reports (optional photo) → get ticket ID → track status.
