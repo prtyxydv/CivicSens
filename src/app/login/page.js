@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,7 +9,7 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-export default function LoginPage() {
+function LoginClient() {
   const router = useRouter();
   const params = useSearchParams();
   const initialRole = params.get("role") === "admin" ? "admin" : "user";
@@ -298,4 +299,12 @@ export default function LoginPage() {
     </div>
   );
 }
+import { Suspense } from "react";
 
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <LoginClient />
+    </Suspense>
+  );
+}
