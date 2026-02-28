@@ -53,47 +53,30 @@ Citizens report potholes, water leaks, and safety hazards through scattered chan
 
 ---
 
-## Architecture
+## Why I Built This
 
-```mermaid
-flowchart LR
-  subgraph Client
-    A[Landing /]
-    B[Login]
-    C[Dashboard]
-    D[Admin]
-  end
+I wanted to build a real-world SaaS MVP that:
 
-  subgraph API
-    E[/api/auth/login]
-    F[/api/auth/logout]
-    G[/api/reports]
-    H[/api/uploads]
-  end
+Uses authentication and database logic
 
-  subgraph Data
-    I[(Supabase PG)]
-    J[(Storage)]
-  end
+Simulates admin-user architecture
 
-  A --> B
-  B --> E
-  B --> C
-  B --> D
-  C --> G
-  C --> H
-  D --> I
-  E --> F
-  G --> I
-  H --> J
-```
+Demonstrates production-style deployment
 
-- **Landing (`/`):** Public; explains problem, audience, and AI differentiator; CTAs to login.
-- **Login (`/login`):** User (email) or Admin (email + password). Sets httpOnly session cookie.
-- **Dashboard (`/dashboard`):** Protected (user session). Submit reports (optional image via `/api/uploads`), query reports; report creation and image URL stored via `/api/reports` and Supabase.
-- **Admin (`/admin`):** Protected (admin session). Reads/updates `reports` via Supabase client; live ledger and status updates.
-
+Solves a meaningful civic-tech problem
 ---
+
+## Future Improvements
+
+Map-based issue visualization
+
+AI-based severity scoring
+
+Role-based permissions expansion
+
+Notification system
+
+Public transparency dashboard
 
 ## Screenshots
 
