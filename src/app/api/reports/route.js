@@ -72,10 +72,12 @@ export async function POST(request) {
     image_url: imageUrl,
     status: "Submitted",
     priority_level: ai.prio,
+    severity_score: ai.score || 0,
+    department: ai.dept || "Unassigned",
     risk_assessment: ai.msg,
     latitude,
     longitude,
-    email: email // Primary choice
+    email: email
   };
 
   const attemptInsert = async (p) =>

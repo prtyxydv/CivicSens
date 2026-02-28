@@ -5,10 +5,9 @@ import React, { useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, Mail, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { AnimatedButton } from "@/components/ui/AnimatedButton";
-import { GlowBorder } from "@/components/ui/GlowBorder";
 import { SectionWrapper } from "@/components/ui/SectionWrapper";
+import { cn } from "@/lib/utils";
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -53,138 +52,111 @@ function LoginClient() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) {
-        setError(data?.error || "Authentication failed.");
+        setError(data?.error || "Login failed. Please check your credentials.");
         return;
       }
       router.push(nextPath);
       router.refresh();
     } catch {
-      setError("Network protocol error.");
+      setError("Network error. Please try again.");
     } finally {
       setPending(false);
     }
   };
 
   return (
-    <SectionWrapper className="min-h-[80vh] flex items-center justify-center">
-      <div className="grid lg:grid-cols-2 gap-16 items-center w-full max-w-6xl">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-6 bg-background">
+      <div className="w-full max-w-md">
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="bento-card p-8 md:p-10 space-y-8"
         >
-          <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85] mb-8">
-            Access <br />
-            <span className="text-primary">Intelligence.</span>
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-md leading-relaxed">
-            Secure portal for citizens and administrators. Your data is encrypted and committed to the civic ledger.
-          </p>
-          
-          <div className="mt-12 space-y-4">
-            <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest text-primary/60">
-              <ShieldCheck size={20} />
-              End-to-end encrypted
-            </div>
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {role === "admin" ? "Admin Login" : "Welcome Back"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {role === "admin" ? "Access the city management dashboard." : "Sign in to report and track issues."}
+            </p>
           </div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-        >
-          <GlowBorder glowColor={role === "admin" ? "rgba(139, 92, 246, 0.5)" : "rgba(14, 165, 233, 0.5)"}>
-            <div className="p-8 md:p-12 space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-white/5 rounded-2xl border border-white/10 text-primary">
-                    {role === "admin" ? <Lock size={20} /> : <Mail size={20} />}
-                  </div>
-                  <h3 className="text-2xl font-bold">{role === "admin" ? "Admin Access" : "Citizen Entry"}</h3>
-                </div>
+          <div className="flex bg-muted p-1 rounded-md border border-transparent">
+            <button
+              onClick={() => setRole("user")}
+              className={cn(
+                "flex-1 py-2 rounded text-sm font-medium transition-all",
+                role === "user" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Citizen
+            </button>
+            <button
+              onClick={() => setRole("admin")}
+              className={cn(
+                "flex-1 py-2 rounded text-sm font-medium transition-all",
+                role === "admin" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Admin
+            </button>
+          </div>
 
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-                  <button
-                    onClick={() => setRole("user")}
-                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                      role === "user" ? "bg-primary text-white" : "text-muted-foreground hover:text-white"
-                    }`}
-                  >
-                    User
-                  </button>
-                  <button
-                    onClick={() => setRole("admin")}
-                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                      role === "admin" ? "bg-primary text-white" : "text-muted-foreground hover:text-white"
-                    }`}
-                  >
-                    Admin
-                  </button>
-                </div>
-              </div>
-
-              <form onSubmit={submit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                    Identification Email
-                  </label>
-                  <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    placeholder="name@domain.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary/50 transition-all"
-                  />
-                </div>
-
-                {role === "admin" && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-2"
-                  >
-                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                      Secure Password
-                    </label>
-                    <input
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      type="password"
-                      placeholder="••••••••"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-primary/50 transition-all"
-                    />
-                  </motion.div>
-                )}
-
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-
-                <AnimatedButton
-                  disabled={!canSubmit || pending}
-                  className="w-full py-5 text-sm tracking-[0.2em] font-black uppercase"
-                >
-                  {pending ? (
-                    <Loader2 className="animate-spin mx-auto" size={20} />
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      Initialize Session <ArrowRight size={18} />
-                    </div>
-                  )}
-                </AnimatedButton>
-              </form>
+          <form onSubmit={submit} className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-foreground">
+                Email Address
+              </label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="you@example.com"
+                className="w-full"
+              />
             </div>
-          </GlowBorder>
+
+            {role === "admin" && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="space-y-3"
+              >
+                <label className="text-sm font-semibold text-foreground">
+                  Password
+                </label>
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full"
+                />
+              </motion.div>
+            )}
+
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium rounded-md">
+                {error}
+              </div>
+            )}
+
+            <AnimatedButton
+              type="submit"
+              disabled={!canSubmit || pending}
+              className="w-full py-3"
+            >
+              {pending ? (
+                <Loader2 className="animate-spin mx-auto" size={20} />
+              ) : (
+                "Sign In"
+              )}
+            </AnimatedButton>
+          </form>
         </motion.div>
       </div>
-    </SectionWrapper>
+    </div>
   );
 }
 

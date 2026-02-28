@@ -9,35 +9,70 @@ export async function POST(req) {
       return NextResponse.json({ error: "Description required" }, { status: 400 });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      throw new Error("GOOGLE_API_KEY is missing from environment");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
     });
 
-    const prompt = `Analyze this civic issue report: "${description}".
-Provide a JSON response with the following keys:
-- "cat": A short, specific category (e.g., "Road Infrastructure", "Sanitation", "Electrical Hazard").
-- "prio": An integer from 1 to 3 (1 = low, 2 = medium, 3 = critical).
-- "msg": A brief risk assessment or summary of the danger/issue.
-- "time": Estimated response time string (e.g., "24-48 Hours", "Immediate Dispatch").
-Do not include any other text besides the JSON.`;
+    const prompt = `You are an AI assistant for a city maintenance app. 
+A citizen reported this issue: "${description}".
+
+Analyze the issue and provide a simple, clear response in JSON format.
+Use everyday language that a citizen can understand.
+
+Required JSON Structure:
+{
+  "cat": "Simple Category (e.g. Roads, Water, Electricity, Trash, Safety)",
+  "prio": 1 to 10 (1 = low, 10 = urgent life threat),
+  "msg": "A short, friendly summary of the problem and the risk it poses.",
+  "time": "Expected fix time (e.g. 24 Hours, 3 Days, Immediate)",
+  "dept": "DOT, Public Works, Utilities, or Emergency Services",
+  "score": 1 to 100 (Severity score: 1 = minor, 100 = critical danger)
+}
+
+CRITICAL: You MUST include the "score" field as a number between 1 and 100.
+ONLY return the raw JSON object. No explanations or markdown.`;
 
     const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    const json = JSON.parse(text);
+    const response = await result.response;
+    let text = response.text().trim();
+    
+    console.log("RAW AI RESPONSE:", text);
+
+    // Cleanup AI output
+    if (text.startsWith("```json")) {
+      text = text.replace(/```json|```/g, "").trim();
+    } else if (text.startsWith("```")) {
+      text = text.replace(/```/g, "").trim();
+    }
+
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (e) {
+      console.error("JSON PARSE FAILED. Raw text:", text);
+      throw new Error("Invalid AI response format");
+    }
+
+    // Ensure numeric types and handle potential missing fields
+    json.prio = parseInt(json.prio) || 1;
+    json.score = parseInt(json.score) || 20; // Default to 20 if missing
 
     return NextResponse.json(json);
   } catch (error) {
-    console.error("Analysis error:", error);
-    // Fallback logic
+    console.error("AI Analysis error:", error);
     return NextResponse.json({
-      cat: "General Inquiry",
-      prio: 1,
-      msg: "System fallback classification.",
-      time: "3-5 Business Days"
+      cat: "Maintenance",
+      prio: 3,
+      msg: "We've received your report. A team will review it shortly.",
+      time: "24-48 Hours",
+      dept: "Public Works",
+      score: 30 // Higher default for fallback
     });
   }
 }

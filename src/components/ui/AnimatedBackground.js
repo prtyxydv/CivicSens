@@ -1,10 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 
 export const AnimatedBackground = () => {
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -12,26 +11,23 @@ export const AnimatedBackground = () => {
   if (!mounted) return null;
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1]">
-      <div className="bg-mesh" />
-      <div className="bg-grid" />
-      
-      {/* Hero Radial Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-[radial-gradient(circle_at_center,rgba(109,40,217,0.08)_0%,transparent_70%)] opacity-60" />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-[-1] bg-background">
+      {/* High-performance Base Background */}
+      <div className="bg-gradient-optimized absolute inset-0" />
 
-      {/* CSS Particles */}
-      {[...Array(20)].map((_, i) => (
-        <div 
-          key={i} 
-          className="particle" 
-          style={{ 
-            left: `${Math.random() * 100}%`, 
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 20}s`,
-            animationDuration: `${15 + Math.random() * 10}s`
-          }} 
-        />
-      ))}
+      {/* GPU Accelerated Glows - Static or simple opacity pulses are smoother than movement */}
+      <div 
+        className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-primary/5 blur-[100px] rounded-full" 
+        style={{ willChange: 'opacity' }}
+      />
+
+      <div 
+        className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-500/5 blur-[100px] rounded-full"
+        style={{ willChange: 'opacity' }}
+      />
+
+      {/* Static Noise Overlay - CSS only is faster than SVG URLs */}
+      <div className="absolute inset-0 opacity-[0.01] pointer-events-none bg-noise" />
     </div>
   );
 };
