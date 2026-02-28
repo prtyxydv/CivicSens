@@ -207,26 +207,35 @@ export default function AppClient({ session }) {
     ? "bg-slate-950 text-slate-100"
     : "bg-[#fcfdfe] text-slate-900";
   const panel = isDark
-    ? "bg-slate-900/40 border-slate-800"
-    : "bg-white/80 border-slate-200 shadow-2xl shadow-slate-200/60";
+    ? "bg-slate-900/30 border border-slate-800/80 backdrop-blur-2xl shadow-2xl shadow-black/10"
+    : "bg-white/70 border border-slate-200/80 backdrop-blur-2xl shadow-2xl shadow-slate-200/50";
   const input = isDark
     ? "bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:ring-blue-500/20"
     : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20";
 
   return (
     <div className={`min-h-screen transition-colors duration-700 ease-out font-sans relative overflow-hidden ${shellBg}`}>
+      {/* Cursor-following glow (interactive glassmorphism background) */}
       <div
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
         style={{
-          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, ${
-            isDark ? "rgba(37, 99, 235, 0.12)" : "rgba(37, 99, 235, 0.05)"
-          }, transparent 80%)`,
+          background: `radial-gradient(900px circle at ${mousePos.x}px ${mousePos.y}px, ${
+            isDark ? "rgba(37, 99, 235, 0.14)" : "rgba(37, 99, 235, 0.07)"
+          }, transparent 45%), radial-gradient(600px circle at ${mousePos.x * 0.95}px ${mousePos.y * 1.05}px, ${
+            isDark ? "rgba(16, 185, 129, 0.06)" : "rgba(16, 185, 129, 0.04)"
+          }, transparent 40%)`,
+        }}
+      />
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-50"
+        style={{
+          background: "radial-gradient(ellipse 100% 60% at 50% -10%, rgba(37, 99, 235, 0.1), transparent)",
         }}
       />
 
       <nav
-        className={`relative z-50 border-b px-8 py-5 flex justify-between items-center backdrop-blur-xl transition-all ${
-          isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200/60 bg-white/60"
+        className={`relative z-50 border-b px-8 py-5 flex justify-between items-center backdrop-blur-2xl transition-all ${
+          isDark ? "border-slate-800/80 bg-slate-950/50" : "border-slate-200/80 bg-white/60"
         }`}
       >
         <div className="flex items-center gap-4">
@@ -277,7 +286,7 @@ export default function AppClient({ session }) {
               Submit an issue with optional photo evidence. Our system classifies it and generates a ticket instantly.
             </p>
 
-            <div className={`p-10 rounded-[3rem] border backdrop-blur-2xl ${panel}`}>
+            <div className={`p-10 rounded-[3rem] ${panel} transition-all duration-300`}>
               <div className="space-y-8">
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-4 block">
@@ -399,7 +408,7 @@ export default function AppClient({ session }) {
           </section>
 
           <aside className="lg:col-span-5 pt-2 lg:pt-24 animate-[fadeInUp_800ms_ease-out_both]">
-            <div className={`p-10 rounded-[3rem] border backdrop-blur-2xl ${panel}`}>
+            <div className={`p-10 rounded-[3rem] ${panel} transition-all duration-300`}>
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-3 bg-slate-900 rounded-2xl shadow-lg">
                   <Search className="text-white w-5 h-5" />

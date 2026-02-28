@@ -110,6 +110,8 @@ flowchart LR
 
 ## Setup
 
+**Full credentials reference:** [docs/CREDENTIALS.md](docs/CREDENTIALS.md)
+
 ### 1. Clone and install
 
 ```bash

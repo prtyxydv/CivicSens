@@ -20,10 +20,17 @@ export default function LoginPage() {
   const [isDark, setIsDark] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const saved = localStorage.getItem("civicsens_theme");
     if (saved) setIsDark(saved === "dark");
+  }, []);
+
+  useEffect(() => {
+    const onMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
   const toggleTheme = () => {
@@ -83,8 +90,8 @@ export default function LoginPage() {
     ? "bg-slate-950 text-slate-100"
     : "bg-[#fcfdfe] text-slate-900";
   const panel = isDark
-    ? "bg-slate-900/50 border-slate-800"
-    : "bg-white/80 border-slate-200 shadow-2xl shadow-slate-200/60";
+    ? "bg-slate-900/30 border border-slate-800/80 backdrop-blur-2xl shadow-2xl shadow-black/10"
+    : "bg-white/70 border border-slate-200/80 backdrop-blur-2xl shadow-2xl shadow-slate-200/50";
   const input = isDark
     ? "bg-slate-950 border-slate-800 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 focus:ring-blue-500/20"
     : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20";
@@ -92,15 +99,24 @@ export default function LoginPage() {
   return (
     <div className={`min-h-screen ${shellBg} font-sans overflow-hidden relative`}>
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-100"
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
         style={{
-          background:
-            "radial-gradient(900px circle at 10% 10%, rgba(37, 99, 235, 0.14), transparent 55%), radial-gradient(800px circle at 90% 20%, rgba(16, 185, 129, 0.10), transparent 55%), radial-gradient(900px circle at 50% 110%, rgba(245, 158, 11, 0.10), transparent 50%)",
+          background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, ${
+            isDark ? "rgba(37, 99, 235, 0.12)" : "rgba(37, 99, 235, 0.06)"
+          }, transparent 45%), radial-gradient(600px circle at ${mousePos.x * 0.9}px ${mousePos.y * 1.1}px, ${
+            isDark ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.04)"
+          }, transparent 40%)`,
+        }}
+      />
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-50"
+        style={{
+          background: "radial-gradient(ellipse 100% 80% at 50% -20%, rgba(37, 99, 235, 0.1), transparent)",
         }}
       />
 
       <nav
-        className={`relative z-10 border-b px-8 py-5 flex justify-between items-center backdrop-blur-xl ${
+        className={`relative z-10 border-b px-8 py-5 flex justify-between items-center backdrop-blur-2xl ${
           isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200/60 bg-white/60"
         }`}
       >

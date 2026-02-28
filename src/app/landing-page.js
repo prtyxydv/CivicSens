@@ -16,10 +16,17 @@ import {
 
 export default function LandingPage() {
   const [isDark, setIsDark] = useState(true);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const saved = localStorage.getItem("civicsens_theme");
     if (saved) setIsDark(saved === "dark");
+  }, []);
+
+  useEffect(() => {
+    const onMove = (e) => setMousePos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
   }, []);
 
   const toggleTheme = () => {
@@ -29,22 +36,33 @@ export default function LandingPage() {
   };
 
   const bg = isDark ? "bg-slate-950 text-slate-100" : "bg-[#fcfdfe] text-slate-900";
-  const card = isDark
-    ? "bg-slate-900/40 border-slate-800"
-    : "bg-white/80 border-slate-200 shadow-xl";
+  const glass = isDark
+    ? "bg-slate-900/30 border border-slate-800/80 backdrop-blur-2xl shadow-2xl shadow-black/10"
+    : "bg-white/60 border border-slate-200/80 backdrop-blur-2xl shadow-2xl shadow-slate-200/50";
+  const card = `${glass} transition-all duration-300 hover:translate-y-[-2px] hover:shadow-blue-500/5`;
 
   return (
-    <div className={`min-h-screen font-sans ${bg} transition-colors duration-500`}>
-      {/* Subtle glow */}
+    <div className={`min-h-screen font-sans ${bg} transition-colors duration-500 overflow-hidden`}>
+      {/* Cursor-following glow (interactive background) */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-100"
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
         style={{
-          background:
-            "radial-gradient(1000px circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 50%), radial-gradient(800px circle at 80% 80%, rgba(16, 185, 129, 0.08), transparent 50%)",
+          background: `radial-gradient(900px circle at ${mousePos.x}px ${mousePos.y}px, ${
+            isDark ? "rgba(37, 99, 235, 0.15)" : "rgba(37, 99, 235, 0.08)"
+          }, transparent 45%), radial-gradient(700px circle at ${mousePos.x * 0.9}px ${mousePos.y * 1.1}px, ${
+            isDark ? "rgba(16, 185, 129, 0.08)" : "rgba(16, 185, 129, 0.05)"
+          }, transparent 40%)`,
+        }}
+      />
+      {/* Static ambient gradient */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-60"
+        style={{
+          background: "radial-gradient(ellipse 120% 80% at 50% -20%, rgba(37, 99, 235, 0.12), transparent), radial-gradient(ellipse 80% 50% at 100% 50%, rgba(16, 185, 129, 0.06), transparent)",
         }}
       />
 
-      <nav className={`relative z-10 border-b backdrop-blur-xl px-6 py-4 flex justify-between items-center ${
+      <nav className={`relative z-10 border-b backdrop-blur-xl px-6 py-4 flex justify-between items-center transition-all duration-300 ${
         isDark ? "border-slate-800/60 bg-slate-950/50" : "border-slate-200/80 bg-white/70"
       }`}>
         <div className="flex items-center gap-3">
@@ -71,7 +89,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/login"
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-600/20"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-200 shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30 hover:-translate-y-0.5 active:scale-[0.98]"
           >
             Get started <ArrowRight className="w-4 h-4" />
           </Link>
@@ -92,13 +110,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/login"
-              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-600/25 hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-200 shadow-xl shadow-blue-600/25 hover:-translate-y-0.5 hover:shadow-blue-500/30 active:scale-[0.98]"
             >
               Report an issue <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/login?role=admin"
-              className="inline-flex items-center justify-center gap-2 border border-slate-600 text-slate-300 hover:bg-slate-800/50 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all"
+              className="inline-flex items-center justify-center gap-2 border border-slate-600 text-slate-300 hover:bg-slate-800/50 hover:border-slate-500 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-200 active:scale-[0.98]"
             >
               <ShieldCheck className="w-4 h-4" /> Admin login
             </Link>
@@ -107,13 +125,13 @@ export default function LandingPage() {
 
         {/* Problem & Who it's for */}
         <section className="grid md:grid-cols-2 gap-8 mb-20 animate-[fadeInUp_700ms_ease-out_both]">
-          <div className={`p-8 rounded-[2rem] border ${card}`}>
+          <div className={`p-8 rounded-[2rem] ${card}`}>
             <h2 className="text-2xl font-black tracking-tight mb-3">The problem</h2>
             <p className="text-slate-500 font-medium">
               Citizens report potholes, leaks, and hazards through scattered channels. Tickets sit in queues with no clear priority, so urgent issues get the same treatment as routine ones.
             </p>
           </div>
-          <div className={`p-8 rounded-[2rem] border ${card}`}>
+          <div className={`p-8 rounded-[2rem] ${card}`}>
             <h2 className="text-2xl font-black tracking-tight mb-3">Who it&apos;s for</h2>
             <p className="text-slate-500 font-medium">
               <strong className="text-slate-300">Citizens</strong> who want to submit a report in one place and track status. <strong className="text-slate-300">Municipal staff</strong> who need a single dashboard to triage and act on AI-prioritized tickets.
@@ -122,7 +140,7 @@ export default function LandingPage() {
         </section>
 
         {/* One strong differentiator: AI classification + priority scoring */}
-        <section className={`p-10 md:p-12 rounded-[2.5rem] border ${card} mb-20 animate-[fadeInUp_800ms_ease-out_both]`}>
+        <section className={`p-10 md:p-12 rounded-[2.5rem] ${card} mb-20 animate-[fadeInUp_800ms_ease-out_both]`}>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400">
               <Zap className="w-6 h-6" />
@@ -154,18 +172,18 @@ export default function LandingPage() {
         <section className="mb-20 animate-[fadeInUp_900ms_ease-out_both]">
           <h2 className="text-2xl font-black tracking-tight mb-8 text-center">Why it&apos;s useful</h2>
           <div className="grid sm:grid-cols-3 gap-6">
-            <div className={`p-6 rounded-2xl border text-center ${card}`}>
-              <MapPin className="w-10 h-10 text-blue-500 mx-auto mb-3" />
+            <div className={`p-6 rounded-2xl text-center group ${card}`}>
+              <MapPin className="w-10 h-10 text-blue-500 mx-auto mb-3 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-black text-lg mb-2">Location attached</h3>
               <p className="text-sm text-slate-500">Reports include coordinates so teams know exactly where to go.</p>
             </div>
-            <div className={`p-6 rounded-2xl border text-center ${card}`}>
-              <BarChart3 className="w-10 h-10 text-blue-500 mx-auto mb-3" />
+            <div className={`p-6 rounded-2xl text-center group ${card}`}>
+              <BarChart3 className="w-10 h-10 text-blue-500 mx-auto mb-3 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-black text-lg mb-2">Admin dashboard</h3>
               <p className="text-sm text-slate-500">Live ledger, status updates, and hotspot view for operators.</p>
             </div>
-            <div className={`p-6 rounded-2xl border text-center ${card}`}>
-              <CheckCircle2 className="w-10 h-10 text-blue-500 mx-auto mb-3" />
+            <div className={`p-6 rounded-2xl text-center group ${card}`}>
+              <CheckCircle2 className="w-10 h-10 text-blue-500 mx-auto mb-3 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="font-black text-lg mb-2">Track by ticket ID</h3>
               <p className="text-sm text-slate-500">Citizens can check status (Submitted → Verified → Resolved) anytime.</p>
             </div>

@@ -13,7 +13,8 @@ function makeTicketId() {
 }
 
 export async function GET(request) {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const session = verifySession(token);
   if (!session) return jsonError("Unauthorized", 401);
 
@@ -39,7 +40,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const token = cookies().get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const session = verifySession(token);
   if (!session) return jsonError("Unauthorized", 401);
 
