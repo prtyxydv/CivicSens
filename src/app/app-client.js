@@ -405,7 +405,7 @@ export default function AppClient({ session }) {
                       <InsightMetric label="Dept" value={preAiResult?.dept} />
                     </div>
                     <div className="aspect-square bg-foreground/[0.02] border border-white/10 overflow-hidden rounded-xl flex items-center justify-center">
-                      {previewUrl ? <img src={previewUrl} className="w-full h-full object-cover grayscale opacity-80" /> : <div className="text-foreground/5"><Camera size={64} /></div>}
+                      {previewUrl ? <img src={previewUrl} alt="Preview" className="w-full h-full object-cover grayscale opacity-80" /> : <div className="text-foreground/5"><Camera size={64} /></div>}
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-6 pt-10 border-t border-white/5">

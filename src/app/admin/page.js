@@ -136,7 +136,7 @@ export default function AdminDashboard() {
                             <span className="font-mono text-[10px] text-foreground/30 font-black tabular-nums tracking-widest">#{report.ticket_id}</span>
                           </div>
                           <p className="font-black text-lg uppercase tracking-tighter text-foreground truncate">{report.category || 'Maintenance'}</p>
-                          <p className="text-[10px] text-muted-foreground line-clamp-1 italic font-medium opacity-60">"{report.description}"</p>
+                          <p className="text-[10px] text-muted-foreground line-clamp-1 italic font-medium opacity-60">&quot;{report.description}&quot;</p>
                         </div>
                       </div>
                     </td>
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
                     <section className="space-y-6">
                       <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-foreground/30 italic">Observation Details</h4>
                       <div className="editorial-card p-8 bg-foreground/[0.02] border-white/5 text-left">
-                        <p className="text-lg font-medium leading-relaxed italic text-foreground/80">"{selectedReport.description}"</p>
+                        <p className="text-lg font-medium leading-relaxed italic text-foreground/80">&quot;{selectedReport.description}&quot;</p>
                       </div>
                     </section>
 
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
                       <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-foreground/30 italic">Visual Matrix</h4>
                       <div className="aspect-video bg-muted rounded-sm border border-white/5 overflow-hidden group/img relative">
                         {selectedReport.image_url ? (
-                          <img src={selectedReport.image_url} className="w-full h-full object-cover grayscale opacity-80 group-hover/img:grayscale-0 group-hover/img:opacity-100 transition-all duration-1000" />
+                          <img src={selectedReport.image_url} alt="Report evidence" className="w-full h-full object-cover grayscale opacity-80 group-hover/img:grayscale-0 group-hover/img:opacity-100 transition-all duration-1000" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center opacity-10"><Camera size={48} /></div>
                         )}

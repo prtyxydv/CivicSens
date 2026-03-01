@@ -86,7 +86,7 @@ export default function DynamicMap({
                 <div className="p-2 space-y-2 text-left">
                   <p className="text-[10px] font-black uppercase text-accent-blue tabular-nums">#{report.ticket_id}</p>
                   <p className="text-xs font-bold uppercase tracking-tight text-foreground">{report.category}</p>
-                  <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed italic">"{report.description}"</p>
+                  <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed italic">&quot;{report.description}&quot;</p>
                   <div className="flex items-center gap-2 pt-2 border-t border-white/5">
                     <span className={cn("w-1.5 h-1.5 rounded-full", report.priority_level >= 7 ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-accent-teal')} />
                     <span className="text-[9px] font-black uppercase tracking-widest opacity-60">{report.status}</span>
