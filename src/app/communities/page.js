@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { SectionWrapper } from "@/components/ui/SectionWrapper";
+import { AnimatedButton } from "@/components/ui/AnimatedButton";
 import { Users, MapPin, Award, ShieldCheck, Heart, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
