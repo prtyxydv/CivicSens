@@ -41,6 +41,13 @@ Citizens report potholes, water leaks, and safety hazards through scattered chan
 | **Production feel** | Loading states, error states, empty states, success toasts, form validation (required description), responsive layout. |
 
 ---
+## 🛠️ The Admin Experience (The "Brain")
+I built the Admin Dashboard to solve the "Inbox Zero" problem for city officials.
+* **AI-Priority Engine:** Every ticket is auto-scored (P1-P3) using [Your logic/AI], ensuring emergency leaks are seen before routine maintenance.
+* **Live Ledger:** A high-performance table with real-time status updates via Supabase listeners.
+* **Hotspot Analysis:** A radar-style panel to identify geographical clusters of issues.
+
+---
 
 ## Tech stack
 
