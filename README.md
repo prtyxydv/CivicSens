@@ -78,8 +78,7 @@ This project is in active development. I am currently refactoring the core to ha
 ## 📬 Let's Connect
 I am currently seeking **Summer Internship 2026** opportunities in **Full-Stack Development** or **Data Science**.
 * **GitHub:** [@prtyxydv](https://github.com/prtyxydv)
-* **LinkedIn:** [Insert Your LinkedIn Link Here]
-* **Portfolio:** [Insert Portfolio Link]
+* **LinkedIn:** [https://www.linkedin.com/in/pratyaksh-yadav-526485367/]
 
 ---
 *Built with ❤️ to improve city life through technology.*
