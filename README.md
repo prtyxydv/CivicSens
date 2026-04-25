@@ -1,75 +1,85 @@
-# CivicSens 🏛️
+# 🏛️ CivicSens: AI-Driven Municipal Triage & Reporting
+**A Full-Stack SaaS Solution bridging the gap between Citizens and City Governance.**
 
-**Bridging the gap between citizens and city hall with AI-driven triage.**
-A dual-platform solution for real-time civic reporting and municipal workforce management.
-
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://civic-sens.vercel.app/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-Database-blue)](https://supabase.com/)
-
----
-
-## 🚀 Overview
-CivicSens is an AI-driven civic triage platform designed to solve the "Inbox Zero" problem for municipal authorities. While citizens submit infrastructure reports (potholes, leaks, hazards), the system automatically classifies and scores each ticket so staff can prioritize critical emergencies over routine maintenance.
-
-> **Note:** A previous iteration of this platform was successfully acquired/sold, demonstrating its real-world utility and market potential.
+[![Live Demo](https://img.shields.io/badge/Demo-Live_on_Vercel-000?style=for-the-badge&logo=vercel&logoColor=white)](https://civic-sens.vercel.app/)
+[![Next.js](https://img.shields.io/badge/Next.js_15-Framework-000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Backend-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Tailwind](https://img.shields.io/badge/Tailwind_CSS_4-UI-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 ---
 
-## 🔑 Explore the Admin Dashboard
-I have provided a guest account so recruiters and developers can see the **Admin Experience** without needing to register.
+## 💡 The Problem & The Vision
+Most civic reporting tools are "black holes"—tickets go in, but priority is lost in a massive queue. **CivicSens** was built to solve the **Triage Crisis**. By using automated classification and risk assessment, we ensure that a hazardous infrastructure failure is prioritized over a cosmetic request.
 
+> **✨ Proven Success:** An earlier iteration of this logic was successfully acquired/sold, demonstrating market viability and real-world demand.
+
+---
+
+## 🔑 Admin Showcase (Access for Recruiters)
+I have built a dedicated **Admin Command Center** to demonstrate workforce management logic. 
 * **URL:** [civic-sens.vercel.app/admin](https://civic-sens.vercel.app/admin)
-* **Username:** `admin@civicsens.com`
-* **Password:** `ABC12345`
+* **Username:** `admin@civicsens.com` | **Password:** `ABC12345`
 
 ---
 
-## 🛠️ Tech Stack
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | Next.js 15 (App Router), React 19, Tailwind CSS 4, Lucide Icons |
-| **Backend** | Next.js API Routes (Serverless) |
-| **Database** | Supabase (PostgreSQL) + Row Level Security (RLS) |
-| **Auth** | Custom session (HMAC-signed httpOnly cookies) |
-| **Storage** | Supabase Storage (for report images) |
-| **Deployment** | Vercel |
+## 🛠️ System Architecture & Modules
+
+### 1. Citizen Portal (Reporting & Tracking)
+* **Dynamic Form Submission:** Supports descriptions and multi-part data handling.
+* **Smart Ticket ID Generation:** Instant tracking code for transparency.
+* **Status Look-up:** Real-time state updates (Submitted → Verified → Dispatched → Resolved).
+
+### 2. Admin Command Center (The Engine)
+* **AI-Triage Ledger:** Automatically assigns **Priority Levels (P1-P3)** based on issue severity.
+* **Hotspot Analysis:** Radar-style panel to identify geographical clusters of high-volume reports.
+* **Status Management:** Secure dropdowns to update the lifecycle of a ticket in the PostgreSQL database.
+
+### 3. Security & Scalability
+* **Auth:** Custom HMAC-signed `httpOnly` cookies for secure admin sessions.
+* **Database:** Integrated with **Supabase (PostgreSQL)** using Row Level Security (RLS).
+* **Storage:** Image handling via Supabase Storage buckets for visual proof of issues.
 
 ---
 
-## ✨ Features
-### 🏙️ For Citizens
-* **Rapid Reporting:** Submit issues with descriptions and optional photo uploads.
-* **Live Tracker:** Look up the status of a report using a unique Ticket ID (Submitted → Verified → Dispatched → Resolved).
-* **Responsive Design:** Fully optimized for mobile users reporting on the go.
-
-### 👮 For Admin (The "Brain")
-* **AI-Priority Engine:** Tickets are auto-scored (P1-P3) to ensure high-risk hazards are handled first.
-* **Live Ledger:** A production-style dashboard to triage, search, and update ticket statuses in real-time.
-* **Hotspot View:** Radar-style panel to identify geographical clusters of recurring issues.
+## 💻 Tech Stack Deep Dive
+* **Frontend:** Next.js 15 (App Router) for Server-Side Rendering (SSR) and SEO.
+* **Styling:** Tailwind CSS 4 for a modern, responsive "Glassmorphism" UI.
+* **Backend:** Next.js API Routes (Serverless) for lean, high-speed execution.
+* **Dev Tools:** Lucide Icons, React 19, Git/GitHub for version control.
 
 ---
 
-## 🏗️ Architecture & Security
-* **Server-Side Security:** Secure operations (like report inserts and storage) are handled via the `SUPABASE_SERVICE_ROLE_KEY` to prevent client-side data tampering.
-* **Secure Auth:** Admin sessions are managed via `AUTH_SECRET` signed cookies, mitigating XSS and session hijacking risks.
-* **Production Feel:** Includes loading states, error handling, success toasts, and empty-state handling for a seamless UX.
-
----
-
-## 📸 Screenshots
+## 📸 Visual Walkthrough
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/59e86b8a-e904-443b-8919-afd3f56a5ccd" alt="CivicSens Dashboard" width="800">
+  <img src="https://github.com/user-attachments/assets/59e86b8a-e904-443b-8919-afd3f56a5ccd" alt="CivicSens Interface" width="900" style="border-radius: 10px; border: 1px solid #ddd;">
   <br>
-  <i>The Unified Reporting Dashboard: Combining reporting and tracking in one clean UI.</i>
+  <i>The Unified Reporting Dashboard: Combining the simplicity of reporting with the power of tracking.</i>
 </p>
 
 ---
 
-## ⚙️ Local Setup
+## 🚀 Evolution & Future Roadmap
+This project is in active development. I am currently refactoring the core to handle higher user loads.
+- [x] **Phase 1:** MVP with Firebase (Sold)
+- [x] **Phase 2:** Full-stack migration to Next.js + Supabase (Current)
+- [ ] **Phase 3:** Integration of a Mapbox/Google Maps API for Heatmap visualization.
+- [ ] **Phase 4:** Automated Email/SMS notifications for status changes.
 
-1. **Clone the repo:**
-   ```bash
-   git clone [https://github.com/prtyxydv/CivicSens.git](https://github.com/prtyxydv/CivicSens.git)
-   cd CivicSens
-   npm install
+---
+
+## ⚙️ How to Run Locally
+1. **Clone:** `git clone https://github.com/prtyxydv/CivicSens.git`
+2. **Install:** `npm install`
+3. **Configure:** Set up `.env.local` with your Supabase keys (Ref: `docs/CREDENTIALS.md`).
+4. **Launch:** `npm run dev`
+
+---
+
+## 📬 Let's Connect
+I am currently seeking **Summer Internship 2026** opportunities in **Full-Stack Development** or **Data Science**.
+* **GitHub:** [@prtyxydv](https://github.com/prtyxydv)
+* **LinkedIn:** [Insert Your LinkedIn Link Here]
+* **Portfolio:** [Insert Portfolio Link]
+
+---
+*Built with ❤️ to improve city life through technology.*
