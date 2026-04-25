@@ -1,3 +1,4 @@
+<img width="2866" height="1641" alt="image (4)" src="https://github.com/user-attachments/assets/59e86b8a-e904-443b-8919-afd3f56a5ccd" />
 # CivicSens
 
 **Report civic issues. AI prioritizes. City acts.**
